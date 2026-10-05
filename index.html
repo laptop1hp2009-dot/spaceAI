@@ -1,0 +1,2143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space AI</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+    background: #020107;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    overflow-x: hidden;
+}
+
+/* =========================
+   GALAXY BACKGROUND
+   ========================= */
+
+.galaxy {
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    background:
+        radial-gradient(circle at 50% 35%, rgba(80, 35, 130, 0.20), transparent 32%),
+        radial-gradient(circle at 15% 80%, rgba(35, 55, 150, 0.12), transparent 30%),
+        radial-gradient(circle at 85% 20%, rgba(150, 45, 120, 0.10), transparent 30%),
+        #020107;
+}
+
+.stars {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -8;
+}
+
+.stars.one {
+    opacity: 0.75;
+    background-image:
+        radial-gradient(circle at 5% 12%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 17% 71%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 31% 22%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 44% 81%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 56% 14%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 68% 67%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 79% 31%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 92% 76%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 86% 8%, white 1px, transparent 1.5px);
+}
+
+.stars.two {
+    opacity: 0.42;
+    transform: scale(1.35);
+    background-image:
+        radial-gradient(circle at 9% 48%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 24% 9%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 38% 61%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 52% 43%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 64% 91%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 76% 58%, white 1px, transparent 1.5px),
+        radial-gradient(circle at 94% 39%, white 1px, transparent 1.5px);
+}
+
+/* =========================
+   SHOOTING STARS
+   ========================= */
+
+.shooting-star {
+    position: fixed;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    z-index: -5;
+}
+
+.shooting-star::after {
+    content: "";
+    position: absolute;
+    width: 85px;
+    height: 1px;
+    right: 1px;
+    top: 0;
+    background: linear-gradient(
+        to left,
+        rgba(255,255,255,0.8),
+        transparent
+    );
+    transform: rotate(-35deg);
+    transform-origin: right center;
+}
+
+.shooting-star.one {
+    top: 18%;
+    left: -10%;
+    animation: shootingOne 9s linear infinite;
+}
+
+.shooting-star.two {
+    top: 48%;
+    left: 105%;
+    animation: shootingTwo 13s linear infinite 4s;
+}
+
+.shooting-star.three {
+    top: 70%;
+    left: -8%;
+    animation: shootingThree 15s linear infinite 8s;
+}
+
+@keyframes shootingOne {
+    0%, 78% {
+        opacity: 0;
+        transform: translate(0, 0);
+    }
+
+    80% {
+        opacity: 0.75;
+    }
+
+    88% {
+        opacity: 0.65;
+        transform: translate(65vw, 25vh);
+    }
+
+    89%, 100% {
+        opacity: 0;
+        transform: translate(72vw, 28vh);
+    }
+}
+
+@keyframes shootingTwo {
+    0%, 76% {
+        opacity: 0;
+        transform: translate(0, 0);
+    }
+
+    78% {
+        opacity: 0.6;
+    }
+
+    88% {
+        opacity: 0.5;
+        transform: translate(-70vw, 25vh);
+    }
+
+    89%, 100% {
+        opacity: 0;
+        transform: translate(-78vw, 28vh);
+    }
+}
+
+@keyframes shootingThree {
+    0%, 80% {
+        opacity: 0;
+        transform: translate(0, 0);
+    }
+
+    82% {
+        opacity: 0.65;
+    }
+
+    91% {
+        opacity: 0.5;
+        transform: translate(70vw, -25vh);
+    }
+
+    92%, 100% {
+        opacity: 0;
+        transform: translate(78vw, -28vh);
+    }
+}
+
+/* =========================
+   MAIN APP
+   ========================= */
+
+.app {
+    width: 100%;
+    min-height: 100vh;
+    padding: 42px 20px 70px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.title {
+    margin: 0;
+    text-align: center;
+    font-size: clamp(27px, 4vw, 42px);
+    font-weight: 500;
+    letter-spacing: -1px;
+}
+
+.subtitle {
+    margin: 12px 0 0;
+    color: rgba(235, 230, 250, 0.65);
+    text-align: center;
+    font-size: 15px;
+}
+
+.stage {
+    width: 100%;
+    max-width: 1100px;
+    margin-top: 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* =========================
+   SATURN
+   ========================= */
+
+.saturn-area {
+    position: relative;
+    width: 330px;
+    height: 290px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.35s ease;
+}
+
+.saturn-glow {
+    position: absolute;
+    width: 225px;
+    height: 225px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        rgba(210, 105, 255, 0.26),
+        transparent 68%
+    );
+    filter: blur(12px);
+    transition: all 0.5s ease;
+}
+
+.saturn {
+    position: absolute;
+    width: 155px;
+    height: 155px;
+    border-radius: 50%;
+    z-index: 3;
+    background:
+        linear-gradient(
+            155deg,
+            #ffe3d0 0%,
+            #e9b38d 28%,
+            #c98272 48%,
+            #8e596e 72%,
+            #553d68 100%
+        );
+
+    box-shadow:
+        inset -25px -20px 35px rgba(0,0,0,0.55),
+        0 0 42px rgba(180,90,220,0.35);
+
+    animation: floatPlanet 5s ease-in-out infinite;
+}
+
+.saturn::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: 42%;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255,235,225,0.15);
+    transform: rotate(-8deg);
+}
+
+.saturn::after {
+    content: "";
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    left: 37px;
+    top: 27px;
+    border-radius: 50%;
+    background: rgba(255,220,200,0.12);
+    filter: blur(3px);
+}
+
+.ring-back,
+.ring-front {
+    position: absolute;
+    width: 285px;
+    height: 78px;
+    border-radius: 50%;
+    transform: rotate(-12deg);
+}
+
+.ring-back {
+    border: 13px solid rgba(190,150,205,0.66);
+    z-index: 1;
+}
+
+.ring-front {
+    border: 13px solid rgba(225,190,220,0.72);
+    z-index: 5;
+    clip-path: polygon(
+        0 50%,
+        100% 50%,
+        100% 100%,
+        0 100%
+    );
+}
+
+.saturn-area.active .saturn-glow {
+    width: 255px;
+    height: 255px;
+}
+
+.saturn-area.active .saturn {
+    animation:
+        floatPlanet 3s ease-in-out infinite,
+        pulsePlanet 1.7s ease-in-out infinite;
+}
+
+@keyframes floatPlanet {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes pulsePlanet {
+    0%, 100% {
+        box-shadow:
+            inset -25px -20px 35px rgba(0,0,0,0.55),
+            0 0 42px rgba(180,90,220,0.35);
+    }
+
+    50% {
+        box-shadow:
+            inset -25px -20px 35px rgba(0,0,0,0.55),
+            0 0 75px rgba(220,120,255,0.7);
+    }
+}
+
+/* =========================
+   WAVEFORM
+   ========================= */
+
+.waveform {
+    width: 350px;
+    height: 65px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    opacity: 0.25;
+    transition: opacity 0.3s ease;
+}
+
+.waveform span {
+    width: 4px;
+    height: 7px;
+    border-radius: 5px;
+    background: linear-gradient(
+        to top,
+        #7355ff,
+        #d56cff,
+        #ff9dce
+    );
+}
+
+.waveform.active {
+    opacity: 1;
+}
+
+.waveform.active span {
+    animation: wave 0.8s ease-in-out infinite;
+}
+
+.waveform.speaking span {
+    animation-duration: 0.48s;
+}
+
+@keyframes wave {
+    0%, 100% {
+        height: 8px;
+        transform: scaleY(1);
+    }
+
+    50% {
+        height: 43px;
+        transform: scaleY(1.15);
+    }
+}
+
+.waveform span:nth-child(1) { animation-delay: 0s; }
+.waveform span:nth-child(2) { animation-delay: 0.06s; }
+.waveform span:nth-child(3) { animation-delay: 0.12s; }
+.waveform span:nth-child(4) { animation-delay: 0.18s; }
+.waveform span:nth-child(5) { animation-delay: 0.24s; }
+.waveform span:nth-child(6) { animation-delay: 0.30s; }
+.waveform span:nth-child(7) { animation-delay: 0.36s; }
+.waveform span:nth-child(8) { animation-delay: 0.42s; }
+.waveform span:nth-child(9) { animation-delay: 0.48s; }
+.waveform span:nth-child(10) { animation-delay: 0.42s; }
+.waveform span:nth-child(11) { animation-delay: 0.36s; }
+.waveform span:nth-child(12) { animation-delay: 0.30s; }
+.waveform span:nth-child(13) { animation-delay: 0.24s; }
+.waveform span:nth-child(14) { animation-delay: 0.18s; }
+.waveform span:nth-child(15) { animation-delay: 0.12s; }
+.waveform span:nth-child(16) { animation-delay: 0.06s; }
+
+/* =========================
+   STATUS + BUTTON
+   ========================= */
+
+.status {
+    min-height: 22px;
+    margin-top: 4px;
+    color: rgba(235,230,250,0.58);
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    text-align: center;
+}
+
+.status.listening {
+    color: #cbb8ff;
+}
+
+.status.speaking {
+    color: #ffc6e8;
+}
+
+.listen-button {
+    margin-top: 18px;
+    min-width: 230px;
+    height: 54px;
+    padding: 0 28px;
+    border: 1px solid rgba(210,180,255,0.35);
+    border-radius: 30px;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(105,70,190,0.42),
+            rgba(50,35,90,0.68)
+        );
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.listen-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 35px rgba(130,80,220,0.28);
+}
+
+.listen-button:active {
+    transform: scale(0.97);
+}
+
+.listen-button.ask-again {
+    background:
+        linear-gradient(
+            135deg,
+            rgba(180,75,155,0.48),
+            rgba(75,40,120,0.72)
+        );
+}
+
+/* =========================
+   CONTENT AREA
+   ========================= */
+
+.content-row {
+    width: min(1000px, 96vw);
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 270px;
+    gap: 20px;
+    align-items: start;
+}
+
+.answer-card,
+.visual-card {
+    border: 1px solid rgba(160,130,230,0.2);
+    background:
+        linear-gradient(
+            135deg,
+            rgba(35,25,65,0.78),
+            rgba(10,10,25,0.82)
+        );
+    backdrop-filter: blur(12px);
+    box-shadow: 0 15px 60px rgba(0,0,0,0.4);
+    border-radius: 22px;
+}
+
+.answer-card {
+    padding: 25px 28px;
+}
+
+.answer-label {
+    margin-bottom: 12px;
+    color: #bda8ff;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.answer-text {
+    color: #ededf5;
+    font-size: 17px;
+    line-height: 1.72;
+}
+
+.visual-card {
+    min-height: 245px;
+    padding: 16px;
+    display: none;
+}
+
+.visual-card.visible {
+    display: block;
+}
+
+.visual-label {
+    margin-bottom: 8px;
+    color: rgba(220,205,255,0.55);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.8px;
+    text-align: center;
+}
+
+.doodle {
+    width: 100%;
+    height: 205px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.doodle svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 760px) {
+    .content-row {
+        grid-template-columns: 1fr;
+    }
+
+    .visual-card {
+        order: -1;
+        min-height: 220px;
+    }
+
+    .doodle {
+        height: 180px;
+    }
+}
+
+@media (max-width: 600px) {
+    .app {
+        padding-top: 30px;
+    }
+
+    .saturn-area {
+        transform: scale(0.88);
+        margin-top: -10px;
+    }
+
+    .waveform {
+        transform: scale(0.88);
+        margin-top: -8px;
+    }
+
+    .answer-card {
+        padding: 20px;
+    }
+
+    .answer-text {
+        font-size: 16px;
+    }
+
+    .content-row {
+        width: 94vw;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="galaxy"></div>
+<div class="stars one"></div>
+<div class="stars two"></div>
+
+<div class="shooting-star one"></div>
+<div class="shooting-star two"></div>
+<div class="shooting-star three"></div>
+
+<main class="app">
+
+    <h1 class="title">Hello, I am your Space AI</h1>
+
+    <p class="subtitle">
+        Ask me anything about space using your voice.
+    </p>
+
+    <section class="stage">
+
+        <div class="saturn-area" id="saturnArea">
+
+            <div class="saturn-glow"></div>
+
+            <div class="ring-back"></div>
+
+            <div class="saturn"></div>
+
+            <div class="ring-front"></div>
+
+        </div>
+
+        <div class="waveform" id="waveform">
+
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+
+        </div>
+
+        <div class="status" id="status">
+            Ready
+        </div>
+
+        <button
+            class="listen-button"
+            id="listenButton"
+            type="button"
+        >
+            Start Listening
+        </button>
+
+    </section>
+
+    <section
+        class="content-row"
+        id="contentRow"
+        style="display:none;"
+    >
+
+        <div
+            class="answer-card"
+            id="answerCard"
+        >
+
+            <div class="answer-label">
+                Answer
+            </div>
+
+            <div
+                class="answer-text"
+                id="answerText"
+            ></div>
+
+        </div>
+
+        <div
+            class="visual-card"
+            id="visualCard"
+        >
+
+            <div class="visual-label">
+                Space diagram
+            </div>
+
+            <div
+                class="doodle"
+                id="doodle"
+            ></div>
+
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+
+(function () {
+
+"use strict";
+
+/* =========================================================
+   ELEMENTS
+   ========================================================= */
+
+var listenButton =
+    document.getElementById("listenButton");
+
+var statusElement =
+    document.getElementById("status");
+
+var waveform =
+    document.getElementById("waveform");
+
+var saturnArea =
+    document.getElementById("saturnArea");
+
+var contentRow =
+    document.getElementById("contentRow");
+
+var answerText =
+    document.getElementById("answerText");
+
+var visualCard =
+    document.getElementById("visualCard");
+
+var doodle =
+    document.getElementById("doodle");
+
+
+/* =========================================================
+   STATE
+   ========================================================= */
+
+var recognition = null;
+
+var listening = false;
+
+var processing = false;
+
+var requestNumber = 0;
+
+var speechNumber = 0;
+
+
+/* =========================================================
+   VOICE
+   ========================================================= */
+
+var preferredVoice = null;
+
+var voiceNames = [
+    "Samantha",
+    "Ava",
+    "Karen",
+    "Victoria",
+    "Moira",
+    "Zira",
+    "Jenny",
+    "Google US English Female",
+    "Google UK English Female",
+    "Microsoft Zira",
+    "Microsoft Jenny",
+    "Microsoft Aria"
+];
+
+function loadPreferredVoice() {
+
+    if (!window.speechSynthesis) {
+        return;
+    }
+
+    var voices =
+        window.speechSynthesis.getVoices();
+
+    if (!voices || !voices.length) {
+        return;
+    }
+
+    var i;
+    var j;
+
+    for (i = 0; i < voiceNames.length; i++) {
+
+        for (j = 0; j < voices.length; j++) {
+
+            if (
+                voices[j].name
+                    .toLowerCase()
+                    .indexOf(
+                        voiceNames[i].toLowerCase()
+                    ) !== -1
+            ) {
+
+                preferredVoice = voices[j];
+
+                return;
+            }
+        }
+    }
+
+    for (i = 0; i < voices.length; i++) {
+
+        if (
+            voices[i].lang &&
+            voices[i].lang
+                .toLowerCase()
+                .indexOf("en") === 0
+        ) {
+
+            preferredVoice = voices[i];
+
+            return;
+        }
+    }
+}
+
+loadPreferredVoice();
+
+if (
+    window.speechSynthesis &&
+    "onvoiceschanged" in window.speechSynthesis
+) {
+
+    window.speechSynthesis.onvoiceschanged =
+        loadPreferredVoice;
+}
+
+
+/* =========================================================
+   UI
+   ========================================================= */
+
+function setStatus(text, mode) {
+
+    statusElement.textContent = text;
+
+    statusElement.className = "status";
+
+    if (mode) {
+        statusElement.classList.add(mode);
+    }
+}
+
+function setVisualMode(mode) {
+
+    waveform.classList.remove(
+        "active",
+        "speaking"
+    );
+
+    saturnArea.classList.remove("active");
+
+    if (mode === "listening") {
+
+        waveform.classList.add("active");
+        saturnArea.classList.add("active");
+
+    } else if (mode === "speaking") {
+
+        waveform.classList.add(
+            "active",
+            "speaking"
+        );
+
+        saturnArea.classList.add("active");
+    }
+}
+
+
+/* =========================================================
+   STOP SPEAKING
+   ========================================================= */
+
+function stopSpeaking() {
+
+    speechNumber++;
+
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+    }
+
+    setVisualMode("none");
+}
+
+
+/* =========================================================
+   START LISTENING
+   ========================================================= */
+
+function startListening() {
+
+    if (!recognition) {
+        return;
+    }
+
+    stopSpeaking();
+
+    processing = false;
+
+    try {
+
+        recognition.start();
+
+    } catch (error) {
+
+        try {
+            recognition.stop();
+        } catch (ignore) {
+        }
+
+        setTimeout(
+            function () {
+
+                try {
+                    recognition.start();
+                } catch (ignoreAgain) {
+                }
+
+            },
+            150
+        );
+    }
+}
+
+
+/* =========================================================
+   RECOGNITION
+   ========================================================= */
+
+var SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+if (SpeechRecognition) {
+
+    recognition =
+        new SpeechRecognition();
+
+    recognition.lang = "en-US";
+
+    recognition.continuous = false;
+
+    recognition.interimResults = false;
+
+    recognition.maxAlternatives = 1;
+
+
+    recognition.onstart =
+        function () {
+
+            listening = true;
+
+            processing = false;
+
+            listenButton.textContent =
+                "Listening...";
+
+            listenButton.classList.remove(
+                "ask-again"
+            );
+
+            setStatus(
+                "Listening",
+                "listening"
+            );
+
+            setVisualMode(
+                "listening"
+            );
+        };
+
+
+    recognition.onresult =
+        function (event) {
+
+            var transcript = "";
+
+            var i;
+
+            for (
+                i = event.resultIndex;
+                i < event.results.length;
+                i++
+            ) {
+
+                if (
+                    event.results[i].isFinal
+                ) {
+
+                    transcript +=
+                        event.results[i][0].transcript;
+                }
+            }
+
+            transcript =
+                transcript.trim();
+
+            listening = false;
+
+            if (transcript) {
+
+                processQuestion(
+                    transcript
+                );
+
+            } else {
+
+                resetToReady();
+            }
+        };
+
+
+    recognition.onerror =
+        function (event) {
+
+            listening = false;
+
+            processing = false;
+
+            setVisualMode("none");
+
+            listenButton.textContent =
+                "Start Listening";
+
+            listenButton.classList.remove(
+                "ask-again"
+            );
+
+            if (
+                event.error ===
+                "not-allowed"
+            ) {
+
+                setStatus(
+                    "Microphone permission was denied.",
+                    "none"
+                );
+
+            } else if (
+                event.error ===
+                "no-speech"
+            ) {
+
+                setStatus(
+                    "I did not hear a question.",
+                    "none"
+                );
+
+            } else if (
+                event.error !==
+                "aborted"
+            ) {
+
+                setStatus(
+                    "Voice recognition error.",
+                    "none"
+                );
+            }
+        };
+
+
+    recognition.onend =
+        function () {
+
+            listening = false;
+
+            if (!processing) {
+
+                listenButton.textContent =
+                    "Start Listening";
+
+                listenButton.classList.remove(
+                    "ask-again"
+                );
+
+                if (
+                    !window.speechSynthesis.speaking
+                ) {
+
+                    setVisualMode("none");
+
+                    setStatus(
+                        "Ready",
+                        "none"
+                    );
+                }
+            }
+        };
+
+} else {
+
+    listenButton.disabled = true;
+
+    listenButton.textContent =
+        "Voice Not Supported";
+
+    setStatus(
+        "Please use a browser with voice recognition.",
+        "none"
+    );
+}
+
+
+/* =========================================================
+   BUTTON
+   ========================================================= */
+
+listenButton.addEventListener(
+    "click",
+    function () {
+
+        /*
+         If AI is speaking, the same button becomes
+         "Ask Another Question".
+
+         Pressing it immediately cancels speech and
+         starts listening again.
+        */
+
+        if (
+            window.speechSynthesis &&
+            window.speechSynthesis.speaking
+        ) {
+
+            stopSpeaking();
+
+            processing = false;
+
+            startListening();
+
+            return;
+        }
+
+        if (listening) {
+
+            try {
+                recognition.stop();
+            } catch (error) {
+            }
+
+            return;
+        }
+
+        startListening();
+    }
+);
+
+
+/* =========================================================
+   PROCESS QUESTION
+   ========================================================= */
+
+async function processQuestion(question) {
+
+    processing = true;
+
+    var thisRequest =
+        ++requestNumber;
+
+    stopSpeaking();
+
+    setStatus(
+        "Thinking...",
+        "speaking"
+    );
+
+    setVisualMode("speaking");
+
+    listenButton.textContent =
+        "Ask Another Question";
+
+    listenButton.classList.add(
+        "ask-again"
+    );
+
+    contentRow.style.display =
+        "grid";
+
+    answerText.textContent =
+        "Thinking about your question...";
+
+    visualCard.classList.remove(
+        "visible"
+    );
+
+    try {
+
+        var response =
+            await fetch(
+                "/api/ask",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        question: question
+                    })
+                }
+            );
+
+        var data;
+
+        try {
+
+            data =
+                await response.json();
+
+        } catch (error) {
+
+            throw new Error(
+                "The server returned an invalid response."
+            );
+        }
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                "The Space AI server returned an error."
+            );
+        }
+
+        if (
+            thisRequest !== requestNumber
+        ) {
+            return;
+        }
+
+        var answer =
+            String(
+                data.answer || ""
+            ).trim();
+
+        if (!answer) {
+
+            throw new Error(
+                "The Space AI returned an empty answer."
+            );
+        }
+
+        answerText.textContent =
+            answer;
+
+        createDoodle(question);
+
+        speakAnswer(
+            answer,
+            thisRequest
+        );
+
+    } catch (error) {
+
+        if (
+            thisRequest !== requestNumber
+        ) {
+            return;
+        }
+
+        processing = false;
+
+        setVisualMode("none");
+
+        listenButton.textContent =
+            "Start Listening";
+
+        listenButton.classList.remove(
+            "ask-again"
+        );
+
+        answerText.textContent =
+            "I could not connect to the Space AI server. " +
+            error.message;
+
+        setStatus(
+            "Ready",
+            "none"
+        );
+    }
+}
+
+
+/* =========================================================
+   SPEAK ANSWER
+   ========================================================= */
+
+function speakAnswer(
+    answer,
+    thisRequest
+) {
+
+    if (
+        !window.speechSynthesis
+    ) {
+
+        processing = false;
+
+        setStatus(
+            "Ready",
+            "none"
+        );
+
+        setVisualMode("none");
+
+        listenButton.textContent =
+            "Start Listening";
+
+        listenButton.classList.remove(
+            "ask-again"
+        );
+
+        return;
+    }
+
+    var currentSpeech =
+        ++speechNumber;
+
+    window.speechSynthesis.cancel();
+
+    var utterance =
+        new SpeechSynthesisUtterance(
+            answer
+        );
+
+    utterance.lang = "en-US";
+
+    utterance.rate = 0.94;
+
+    utterance.pitch = 1.08;
+
+    utterance.volume = 1;
+
+    if (preferredVoice) {
+
+        utterance.voice =
+            preferredVoice;
+    }
+
+    utterance.onstart =
+        function () {
+
+            if (
+                currentSpeech !== speechNumber ||
+                thisRequest !== requestNumber
+            ) {
+                return;
+            }
+
+            processing = true;
+
+            setStatus(
+                "Speaking",
+                "speaking"
+            );
+
+            setVisualMode(
+                "speaking"
+            );
+
+            listenButton.textContent =
+                "Ask Another Question";
+
+            listenButton.classList.add(
+                "ask-again"
+            );
+        };
+
+    utterance.onend =
+        function () {
+
+            if (
+                currentSpeech !== speechNumber ||
+                thisRequest !== requestNumber
+            ) {
+                return;
+            }
+
+            processing = false;
+
+            setVisualMode("none");
+
+            setStatus(
+                "Ready",
+                "none"
+            );
+
+            listenButton.textContent =
+                "Ask Another Question";
+
+            listenButton.classList.add(
+                "ask-again"
+            );
+        };
+
+    utterance.onerror =
+        function () {
+
+            if (
+                currentSpeech !== speechNumber
+            ) {
+                return;
+            }
+
+            processing = false;
+
+            setVisualMode("none");
+
+            setStatus(
+                "Ready",
+                "none"
+            );
+
+            listenButton.textContent =
+                "Ask Another Question";
+
+            listenButton.classList.add(
+                "ask-again"
+            );
+        };
+
+    window.speechSynthesis.speak(
+        utterance
+    );
+}
+
+
+/* =========================================================
+   RESET
+   ========================================================= */
+
+function resetToReady() {
+
+    processing = false;
+
+    setVisualMode("none");
+
+    listenButton.textContent =
+        "Start Listening";
+
+    listenButton.classList.remove(
+        "ask-again"
+    );
+
+    setStatus(
+        "Ready",
+        "none"
+    );
+}
+
+
+/* =========================================================
+   DOODLE ENGINE
+   ========================================================= */
+
+function createDoodle(question) {
+
+    var q =
+        question.toLowerCase();
+
+    visualCard.classList.remove(
+        "visible"
+    );
+
+    doodle.innerHTML = "";
+
+
+    /* EARTH + MOON */
+
+    if (
+        (
+            q.indexOf("earth") !== -1 &&
+            q.indexOf("moon") !== -1
+        ) ||
+        q.indexOf("earth moon") !== -1
+    ) {
+
+        doodle.innerHTML =
+            earthMoonDoodle();
+
+        visualCard.classList.add(
+            "visible"
+        );
+
+        return;
+    }
+
+
+    /* SUN + EARTH */
+
+    if (
+        q.indexOf("sun") !== -1 &&
+        q.indexOf("earth") !== -1
+    ) {
+
+        doodle.innerHTML =
+            sunEarthDoodle();
+
+        visualCard.classList.add(
+            "visible"
+        );
+
+        return;
+    }
+
+
+    /* BLACK HOLE */
+
+    if (
+        q.indexOf("black hole") !== -1
+    ) {
+
+        doodle.innerHTML =
+            blackHoleDoodle();
+
+        visualCard.classList.add(
+            "visible"
+        );
+
+        return;
+    }
+
+
+    /* ORBIT */
+
+    if (
+        q.indexOf("orbit") !== -1 ||
+        q.indexOf("orbiting") !== -1
+    ) {
+
+        doodle.innerHTML =
+            orbitDoodle();
+
+        visualCard.classList.add(
+            "visible"
+        );
+
+        return;
+    }
+
+
+    /* SOLAR SYSTEM */
+
+    if (
+        q.indexOf("solar system") !== -1 ||
+        q.indexOf("planets") !== -1
+    ) {
+
+        doodle.innerHTML =
+            solarSystemDoodle();
+
+        visualCard.classList.add(
+            "visible"
+        );
+
+        return;
+    }
+
+
+    /* STAR */
+
+    if (
+        q.indexOf("star") !== -1 ||
+        q.indexOf("sun") !== -1
+    ) {
+
+        doodle.innerHTML =
+            starDoodle();
+
+        visualCard.classList.add(
+            "visible"
+        );
+
+        return;
+    }
+}
+
+
+/* =========================================================
+   EARTH MOON DOODLE
+   ========================================================= */
+
+function earthMoonDoodle() {
+
+    return `
+    <svg viewBox="0 0 300 205"
+         xmlns="http://www.w3.org/2000/svg">
+
+        <defs>
+
+            <radialGradient id="earthGrad">
+                <stop offset="0%" stop-color="#6fd8ff"/>
+                <stop offset="70%" stop-color="#3677d5"/>
+                <stop offset="100%" stop-color="#17245e"/>
+            </radialGradient>
+
+            <radialGradient id="moonGrad">
+                <stop offset="0%" stop-color="#eeeeee"/>
+                <stop offset="100%" stop-color="#777b91"/>
+            </radialGradient>
+
+            <marker id="arrowEarthMoon"
+                    markerWidth="8"
+                    markerHeight="8"
+                    refX="5"
+                    refY="3"
+                    orient="auto">
+                <path d="M0,0 L6,3 L0,6"
+                      fill="none"
+                      stroke="#dcbcff"
+                      stroke-width="1.5"/>
+            </marker>
+
+        </defs>
+
+        <circle
+            cx="65"
+            cy="103"
+            r="38"
+            fill="url(#earthGrad)"
+            stroke="#9adfff"
+            stroke-width="1.5"
+        />
+
+        <path
+            d="M42 91 C52 80, 57 88, 64 82
+               C70 77, 76 88, 84 84
+               C91 80, 94 91, 99 96"
+            fill="none"
+            stroke="#7df0bb"
+            stroke-width="4"
+            opacity="0.8"
+        />
+
+        <path
+            d="M37 112 C49 104, 55 118, 65 111
+               C75 104, 80 117, 92 110"
+            fill="none"
+            stroke="#6ee7b7"
+            stroke-width="4"
+            opacity="0.7"
+        />
+
+        <circle
+            cx="237"
+            cy="103"
+            r="17"
+            fill="url(#moonGrad)"
+            stroke="#d8dcff"
+            stroke-width="1.5"
+        />
+
+        <circle cx="231" cy="97" r="3"
+                fill="#777b91"/>
+
+        <circle cx="244" cy="109" r="2.5"
+                fill="#777b91"/>
+
+        <circle cx="239" cy="92" r="2"
+                fill="#888ca0"/>
+
+        <line
+            x1="108"
+            y1="103"
+            x2="214"
+            y2="103"
+            stroke="#dcbcff"
+            stroke-width="2"
+            stroke-dasharray="6 5"
+            marker-end="url(#arrowEarthMoon)"
+        />
+
+        <text
+            x="65"
+            y="160"
+            text-anchor="middle"
+            fill="#e9e4ff"
+            font-size="14"
+        >
+            Earth
+        </text>
+
+        <text
+            x="237"
+            y="145"
+            text-anchor="middle"
+            fill="#e9e4ff"
+            font-size="14"
+        >
+            Moon
+        </text>
+
+        <text
+            x="160"
+            y="88"
+            text-anchor="middle"
+            fill="#cbb8ff"
+            font-size="12"
+        >
+            distance
+        </text>
+
+    </svg>
+    `;
+}
+
+
+/* =========================================================
+   SUN EARTH DOODLE
+   ========================================================= */
+
+function sunEarthDoodle() {
+
+    return `
+    <svg viewBox="0 0 300 205"
+         xmlns="http://www.w3.org/2000/svg">
+
+        <circle
+            cx="58"
+            cy="103"
+            r="42"
+            fill="#ffbd55"
+            opacity="0.95"
+        />
+
+        <circle
+            cx="58"
+            cy="103"
+            r="52"
+            fill="none"
+            stroke="#ffbd55"
+            stroke-width="1"
+            opacity="0.18"
+        />
+
+        <g stroke="#ffc76a"
+           stroke-width="3"
+           stroke-linecap="round">
+
+            <line x1="58" y1="32" x2="58" y2="20"/>
+            <line x1="58" y1="174" x2="58" y2="186"/>
+            <line x1="0" y1="103" x2="13" y2="103"/>
+            <line x1="103" y1="103" x2="116" y2="103"/>
+
+        </g>
+
+        <circle
+            cx="242"
+            cy="103"
+            r="18"
+            fill="#4287df"
+            stroke="#9bdfff"
+            stroke-width="1.5"
+        />
+
+        <path
+            d="M228 100 C235 93, 239 99, 244 94
+               C250 90, 254 100, 258 103"
+            fill="none"
+            stroke="#65d69a"
+            stroke-width="3"
+        />
+
+        <ellipse
+            cx="150"
+            cy="103"
+            rx="82"
+            ry="52"
+            fill="none"
+            stroke="#a98aff"
+            stroke-width="1"
+            stroke-dasharray="5 5"
+            opacity="0.55"
+        />
+
+        <circle
+            cx="150"
+            cy="51"
+            r="4"
+            fill="#8edbff"
+        />
+
+        <text
+            x="58"
+            y="160"
+            text-anchor="middle"
+            fill="#e9e4ff"
+            font-size="14"
+        >
+            Sun
+        </text>
+
+        <text
+            x="242"
+            y="137"
+            text-anchor="middle"
+            fill="#e9e4ff"
+            font-size="14"
+        >
+            Earth
+        </text>
+
+        <text
+            x="150"
+            y="187"
+            text-anchor="middle"
+            fill="#cbb8ff"
+            font-size="12"
+        >
+            orbital distance
+        </text>
+
+    </svg>
+    `;
+}
+
+
+/* =========================================================
+   BLACK HOLE DOODLE
+   ========================================================= */
+
+function blackHoleDoodle() {
+
+    return `
+    <svg viewBox="0 0 300 205"
+         xmlns="http://www.w3.org/2000/svg">
+
+        <ellipse
+            cx="150"
+            cy="103"
+            rx="95"
+            ry="35"
+            fill="none"
+            stroke="#ff9bd8"
+            stroke-width="7"
+            opacity="0.35"
+        />
+
+        <ellipse
+            cx="150"
+            cy="103"
+            rx="75"
+            ry="26"
+            fill="none"
+            stroke="#9b7cff"
+            stroke-width="5"
+            opacity="0.5"
+        />
+
+        <circle
+            cx="150"
+            cy="103"
+            r="39"
+            fill="#020107"
+            stroke="#d69cff"
+            stroke-width="4"
+        />
+
+        <circle
+            cx="150"
+            cy="103"
+            r="48"
+            fill="none"
+            stroke="#ffb5df"
+            stroke-width="1"
+            opacity="0.7"
+        />
+
+        <text
+            x="150"
+            y="169"
+            text-anchor="middle"
+            fill="#e9e4ff"
+            font-size="14"
+        >
+            black hole
+        </text>
+
+    </svg>
+    `;
+}
+
+
+/* =========================================================
+   ORBIT DOODLE
+   ========================================================= */
+
+function orbitDoodle() {
+
+    return `
+    <svg viewBox="0 0 300 205"
+         xmlns="http://www.w3.org/2000/svg">
+
+        <circle
+            cx="150"
+            cy="103"
+            r="27"
+            fill="#ffb95c"
+        />
+
+        <circle
+            cx="150"
+            cy="103"
+            r="67"
+            fill="none"
+            stroke="#9e8cff"
+            stroke-width="2"
+            stroke-dasharray="6 5"
+        />
+
+        <circle
+            cx="217"
+            cy="103"
+            r="9"
+            fill="#65baff"
+        />
+
+        <path
+            d="M150 36
+               A67 67 0 0 1 217 103"
+            fill="none"
+            stroke="#d7c5ff"
+            stroke-width="2"
+            marker-end="url(#orbitArrow)"
+        />
+
+        <defs>
+            <marker
+                id="orbitArrow"
+                markerWidth="8"
+                markerHeight="8"
+                refX="5"
+                refY="3"
+                orient="auto"
+            >
+                <path
+                    d="M0,0 L6,3 L0,6"
+                    fill="none"
+                    stroke="#d7c5ff"
+                    stroke-width="1.5"
+                />
+            </marker>
+        </defs>
+
+        <text
+            x="150"
+            y="163"
+            text-anchor="middle"
+            fill="#e9e4ff"
+            font-size="14"
+        >
+            orbital motion
+        </text>
+
+    </svg>
+    `;
+}
+
+
+/* =========================================================
+   SOLAR SYSTEM DOODLE
+   ========================================================= */
+
+function solarSystemDoodle() {
+
+    return `
+    <svg viewBox="0 0 300 205"
+         xmlns="http://www.w3.org/2000/svg">
+
+        <circle
+            cx="35"
+            cy="103"
+            r="21"
+            fill="#ffb84f"
+        />
+
+        <circle
+            cx="72"
+            cy="103"
+            r="4"
+            fill="#a6a6b8"
+        />
+
+        <circle
+            cx="93"
+            cy="103"
+            r="7"
+            fill="#d08b65"
+        />
+
+        <circle
+            cx="119"
+            cy="103"
+            r="8"
+            fill="#58a6df"
+        />
+
+        <circle
+            cx="150"
+            cy="103"
+            r="6"
+            fill="#e56f58"
+        />
+
+        <circle
+            cx="185"
+            cy="103"
+            r="15"
+            fill="#d8a56d"
+        />
+
+        <circle
+            cx="224"
+            cy="103"
+            r="13"
+            fill="#d6b38c"
+        />
+
+        <circle
+            cx="258"
+            cy="103"
+            r="10"
+            fill="#72a7d8"
+        />
+
+        <circle
+            cx="285"
+            cy="103"
+            r="8"
+            fill="#7187d6"
+        />
+
+        <text
+            x="150"
+            y="158"
+            text-anchor="middle"
+            fill="#e9e4ff"
+            font-size="13"
+        >
+            Solar System
+        </text>
+
+    </svg>
+    `;
+}
+
+
+/* =========================================================
+   STAR DOODLE
+   ========================================================= */
+
+function starDoodle() {
+
+    return `
+    <svg viewBox="0 0 300 205"
+         xmlns="http://www.w3.org/2000/svg">
+
+        <circle
+            cx="150"
+            cy="95"
+            r="38"
+            fill="#fff0a3"
+        />
+
+        <circle
+            cx="150"
+            cy="95"
+            r="58"
+            fill="none"
+            stroke="#ffc96d"
+            stroke-width="2"
+            opacity="0.25"
+        />
+
+        <g
+            stroke="#ffd985"
+            stroke-width="3"
+            stroke-linecap="round"
+        >
+
+            <line x1="150" y1="22" x2="150" y2="8"/>
+            <line x1="150" y1="168" x2="150" y2="182"/>
+            <line x1="77" y1="95" x2="63" y2="95"/>
+            <line x1="223" y1="95" x2="237" y2="95"/>
+
+            <line x1="100" y1="45" x2="90" y2="35"/>
+            <line x1="200" y1="145" x2="210" y2="155"/>
+            <line x1="200" y1="45" x2="210" y2="35"/>
+            <line x1="100" y1="145" x2="90" y2="155"/>
+
+        </g>
+
+        <text
+            x="150"
+            y="190"
+            text-anchor="middle"
+            fill="#e9e4ff"
+            font-size="14"
+        >
+            star
+        </text>
+
+    </svg>
+    `;
+}
+
+})();
+</script>
+
+</body>
+</html>

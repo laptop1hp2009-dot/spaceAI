@@ -1,0 +1,8 @@
+{
+  "name": "space-ai",
+  "version": "1.0.0",
+  "description": "Voice-only Space AI",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
